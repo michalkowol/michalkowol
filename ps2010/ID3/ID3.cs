@@ -9,134 +9,77 @@ namespace ID3
 {
     public class Attribute
     {
-        private string name;
-        private ArrayList values;
+        public string Name { get; set; }
+        public List<string> Values { get; set; }
 
-        public Attribute(string _name, IList _values)
+        public Attribute(string name, List<string> values)
         {
-            name = _name;
-            values = new ArrayList(values);
-            values.Sort();
+            Name = name;
+            Values = values;
+            Values.Sort();
         }
 
-        public Attribute(string _name)
+        public Attribute(string name)
+            : this(name, new List<string>())
         {
-            name = _name;
-            values = null;
         }
 
-        public string Name
+        public int IndexOf(string value)
         {
-            get
-            {
-                return name;
-            }
+            return Values.BinarySearch(value);
         }
 
-        public ArrayList Values
+        public bool IsValidValue(string value)
         {
-            get
-            {
-                if (values == null)
-                    return null;
-                else
-                    return new ArrayList(values);
-            }
-        }
-
-        public int indexOf(string value)
-        {
-            if (values != null)
-                return values.BinarySearch(value);
-            else
-                return -1;
-        }
-
-        public bool isValidValue(string value)
-        {
-            return indexOf(value) >= 0;
+            return Values.Contains(value);
         }
 
         public override string ToString()
         {
-            if (values != null)
-                return name + "  " + values.ToString();
-            else
-                return name;
+            return Name + " " + Values.ToString();
         }
     }
 
 
     public class TreeNode
     {
-        private Attribute attribute;
-        private ArrayList children = null; // dziecko odpowiada tej wartosci atrybutu co kolejnośc na liście attribute.values
+        public Attribute Attribute { get; set; }
+        public List<TreeNode> Children { get; set; } // dziecko odpowiada tej wartosci atrybutu co kolejnośc na liście attribute.values
 
-        public TreeNode(Attribute attr)
+        public TreeNode(Attribute attribute)
         {
-            attribute = attr;
-            if (attr.Values != null)
-            {
-                children = new ArrayList(attribute.Values.Count);
-                for (int i = 0; i < attribute.Values.Count; i++)
-                    children.Add(null);
-            }
+            Attribute = attribute;
+            Children = new List<TreeNode>();
+            foreach (var attr in Attribute.Values)
+                Children.Add(null);
         }
 
         public void AddTreeNode(TreeNode treeNode, string ValueName)
         {
-            int index = attribute.indexOf(ValueName);
-            if (children != null && index >= 0)
-                children[index] = treeNode;
+            int index = Attribute.IndexOf(ValueName);
+            if (index >= 0)
+                Children[index] = treeNode;
         }
 
-        public int nummberOfChildren
+        public int NumberOfChildren
         {
-            get
-            {
-                if (children == null)
-                    return 0;
-                else
-                    return children.Count;
-            }
+            get { return Children.Count; }
         }
 
-        public TreeNode getChild(int index)
+        public TreeNode GetChildByBranch(string branchName)
         {
-            if (children == null)
+            int index = Attribute.IndexOf(branchName);
+            if (index < 0)
                 return null;
             else
-                return (TreeNode)children[index];
-        }
-
-        public void setChild(int index, TreeNode child)
-        {
-            if (children != null)
-                children[index] = child;
-        }
-
-        public Attribute Attribute
-        {
-            get
-            {
-                return attribute;
-            }
-        }
-
-        public TreeNode getChildByBranch(string branchName)
-        {
-            int index = attribute.indexOf(branchName);
-            if (children == null || index < 0)
-                return null;
-            else
-                return (TreeNode)children[index];
+                return Children[index];
         }
     }
 
     public class ID3Tree
     {
 
-        private string checkIfAllExamplesEqual(DataTable trainingSet, IList possibleValues)
+        private string checkIfAllExamplesEqual(DataTable trainingSet, List<string> possibleValues)
         {
             //TODO
             return null;
@@ -148,7 +91,7 @@ namespace ID3
             return null;
         }
 
-        private Attribute getAttrWithBiggestGainRatio(DataTable trainingSet, Attribute[] attributes)
+        private Attribute getAttrWithBiggestGainRatio(DataTable trainingSet, List<Attribute> attributes)
         {
             //TODO
             return null;
@@ -160,13 +103,13 @@ namespace ID3
             return null;
         }
 
-        private Attribute[] removeAttribute(Attribute[] attributes)
+        private List<Attribute> removeAttribute(List<Attribute> attributes)
         {
-            //TODO
+
             return null;
         }
 
-        public TreeNode buildID3Tree(DataTable trainingSet, Attribute result, Attribute[] attributes)
+        public TreeNode buildID3Tree(DataTable trainingSet, Attribute result, List<Attribute> attributes)
         {
 
             if (trainingSet.Rows.Count == 0)
@@ -177,7 +120,7 @@ namespace ID3
             if (resultValue != null)
                 return new TreeNode(new Attribute(resultValue));
 
-            if (attributes.Length == 0)
+            if (attributes.Count == 0)
                 return new TreeNode(new Attribute(getMostCommonResult(trainingSet)));
 
             Attribute attr = getAttrWithBiggestGainRatio(trainingSet, attributes);
@@ -185,22 +128,9 @@ namespace ID3
             TreeNode root = new TreeNode(attr);
 
             for (int i = 0; i < attr.Values.Count; i++)
-            {
-                root.setChild(i, buildID3Tree(removeUsedValues(trainingSet, attr, (string)attr.Values[i]), result, removeAttribute(attributes)));
-            }
-
+                root.Children[i] = buildID3Tree(removeUsedValues(trainingSet, attr, attr.Values[i]), result, removeAttribute(attributes));
 
             return root;
-        }
-    }
-
-
-
-
-    class ExampleID3
-    {
-        static void Main(string[] args)
-        {
         }
     }
 }

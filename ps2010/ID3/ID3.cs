@@ -9,8 +9,8 @@ namespace ID3
 {
     public class Attribute
     {
-        public string Name { get; set; }
-        public List<string> Values { get; set; }
+        public string Name { get; private set; }
+        public List<string> Values { get; private set; }
 
         public Attribute(string name, List<string> values)
         {
@@ -36,15 +36,15 @@ namespace ID3
 
         public override string ToString()
         {
-            return Name + " " + Values.ToString();
+            return "[" + Name + ", " + Values.ToString() + "]";
         }
     }
 
 
     public class TreeNode
     {
-        public Attribute Attribute { get; set; }
-        public List<TreeNode> Children { get; set; } // dziecko odpowiada tej wartosci atrybutu co kolejnośc na liście attribute.values
+        public Attribute Attribute { get; private set; }
+        public List<TreeNode> Children { get; private set; } // dziecko odpowiada tej wartosci atrybutu co kolejnośc na liście attribute.values
 
         public TreeNode(Attribute attribute)
         {
@@ -78,17 +78,38 @@ namespace ID3
 
     public class ID3Tree
     {
+        private Attribute Result { get; set; }
+        public TreeNode Root { get; private set; }
 
-        private string checkIfAllExamplesEqual(DataTable trainingSet, List<string> possibleValues)
+        private string checkIfAllExamplesEqual(DataTable trainingSet)
         {
-            //TODO
-            return null;
+            foreach (DataColumn column in trainingSet.Columns)
+            {
+                var columnElements = (from t in trainingSet.AsEnumerable()
+                                      select t.Field<string>(column)).Distinct();
+
+                if (columnElements.Count() > 1)
+                    return null;
+            }
+
+            var r = (from t in trainingSet.AsEnumerable()
+                     select t.Field<string>(Result.Name)).First();
+
+            return r;
         }
 
         private string getMostCommonResult(DataTable trainingSet)
         {
-            //TODO
-            return null;
+            Dictionary<string, int> elementCount = TrainingSetHelpers.AtributeElementsCount(trainingSet, Result);
+
+            KeyValuePair<string, int> maxPair = elementCount.First();
+            foreach (var pair in elementCount)
+            {
+                if (pair.Value > maxPair.Value)
+                    maxPair = pair;
+            }
+
+            return maxPair.Key;
         }
 
         private Attribute getAttrWithBiggestGainRatio(DataTable trainingSet, List<Attribute> attributes)
@@ -105,18 +126,36 @@ namespace ID3
 
         private List<Attribute> removeAttribute(List<Attribute> attributes)
         {
-
             return null;
         }
 
-        public TreeNode buildID3Tree(DataTable trainingSet, Attribute result, List<Attribute> attributes)
+
+        public TreeNode BuildID3Tree(DataTable trainingSet, string result, List<Attribute> attributes)
         {
+            return BuildID3Tree(trainingSet, new Attribute(result), attributes);
+        }
+
+        public TreeNode BuildID3Tree(DataTable trainingSet, Attribute result, List<Attribute> attributes)
+        {
+            Result = result;
+            Root = RecursiveBuildID3Tree(trainingSet, attributes);
+            return Root;
+        }
+
+        private TreeNode RecursiveBuildID3Tree(DataTable trainingSet, List<Attribute> attributes)
+        {
+            foreach (var a in attributes)
+            {
+                Console.WriteLine(a.Name + ", info(x, t): \t" + MathHelpers.InfoAtribute(trainingSet, a, Result));
+                Console.WriteLine(a.Name + ", gain(x, t): \t" + MathHelpers.Gain(trainingSet, a, Result));
+                Console.WriteLine(a.Name + ", split(x, t): \t" + MathHelpers.Info(trainingSet, a));
+                Console.WriteLine(a.Name + ", gainratio(x, t): \t" + MathHelpers.GainRatio(trainingSet, a, Result));
+            }
 
             if (trainingSet.Rows.Count == 0)
                 return new TreeNode(new Attribute("FAILURE"));
 
-            string resultValue;
-            resultValue = checkIfAllExamplesEqual(trainingSet, result.Values);
+            string resultValue = checkIfAllExamplesEqual(trainingSet);
             if (resultValue != null)
                 return new TreeNode(new Attribute(resultValue));
 
@@ -128,7 +167,7 @@ namespace ID3
             TreeNode root = new TreeNode(attr);
 
             for (int i = 0; i < attr.Values.Count; i++)
-                root.Children[i] = buildID3Tree(removeUsedValues(trainingSet, attr, attr.Values[i]), result, removeAttribute(attributes));
+                root.Children[i] = RecursiveBuildID3Tree(removeUsedValues(trainingSet, attr, attr.Values[i]), removeAttribute(attributes));
 
             return root;
         }

@@ -38,6 +38,27 @@ namespace ID3
         {
             return "[" + Name + ", " + Values.ToString() + "]";
         }
+
+        public override bool Equals(object obj)
+        {
+            if (this == obj)
+                return true;
+
+            if (!(obj is Attribute))
+                return false;
+
+            var that = obj as Attribute;
+
+            if (this.Name.Equals(that.Name))
+                return false;
+
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return Name.GetHashCode();
+        }
     }
 
 
@@ -81,7 +102,7 @@ namespace ID3
         private Attribute Result { get; set; }
         public TreeNode Root { get; private set; }
 
-        private string checkIfAllExamplesEqual(DataTable trainingSet)
+        private string CheckIfAllExamplesEqual(DataTable trainingSet)
         {
             foreach (DataColumn column in trainingSet.Columns)
             {
@@ -98,7 +119,7 @@ namespace ID3
             return r;
         }
 
-        private string getMostCommonResult(DataTable trainingSet)
+        private string GetMostCommonResult(DataTable trainingSet)
         {
             Dictionary<string, int> elementCount = TrainingSetHelpers.AtributeElementsCount(trainingSet, Result);
 
@@ -112,21 +133,44 @@ namespace ID3
             return maxPair.Key;
         }
 
-        private Attribute getAttrWithBiggestGainRatio(DataTable trainingSet, List<Attribute> attributes)
+        private Attribute GetAttributeWithBiggestGainRatio(DataTable trainingSet, List<Attribute> attributes)
         {
-            //TODO
-            return null;
+            Attribute AttributeWithBiggestGainRatio = attributes.First();
+            double maxGainRatio = 0;
+
+            foreach (var attribute in attributes)
+            {
+                double attributeGainRatio = MathHelpers.GainRatio(trainingSet, attribute, Result);
+                if (attributeGainRatio > maxGainRatio)
+                {
+                    AttributeWithBiggestGainRatio = attribute;
+                    maxGainRatio = attributeGainRatio;
+                }
+            }
+
+            return AttributeWithBiggestGainRatio;
         }
 
-        private DataTable removeUsedValues(DataTable trainingSet, Attribute attribute, string value)
+        private DataTable RemoveUsedValues(DataTable trainingSet, Attribute attribute, string value)
         {
-            //TODO
-            return null;
+            // TODO check it
+
+            var rowsToRemove = (from row in trainingSet.AsEnumerable()
+                                where row.Field<string>(attribute.Name) == value
+                                select row).ToList();
+
+            foreach (var rowToRemove in rowsToRemove)
+                rowToRemove.Delete();
+
+            trainingSet.AcceptChanges();
+
+            return trainingSet;
         }
 
-        private List<Attribute> removeAttribute(List<Attribute> attributes)
+        private List<Attribute> RemoveAttribute(List<Attribute> attributes, Attribute attributeToRemove)
         {
-            return null;
+            attributes.Remove(attributeToRemove);
+            return attributes;
         }
 
 
@@ -144,30 +188,22 @@ namespace ID3
 
         private TreeNode RecursiveBuildID3Tree(DataTable trainingSet, List<Attribute> attributes)
         {
-            foreach (var a in attributes)
-            {
-                Console.WriteLine(a.Name + ", info(x, t): \t" + MathHelpers.InfoAtribute(trainingSet, a, Result));
-                Console.WriteLine(a.Name + ", gain(x, t): \t" + MathHelpers.Gain(trainingSet, a, Result));
-                Console.WriteLine(a.Name + ", split(x, t): \t" + MathHelpers.Info(trainingSet, a));
-                Console.WriteLine(a.Name + ", gainratio(x, t): \t" + MathHelpers.GainRatio(trainingSet, a, Result));
-            }
-
             if (trainingSet.Rows.Count == 0)
                 return new TreeNode(new Attribute("FAILURE"));
 
-            string resultValue = checkIfAllExamplesEqual(trainingSet);
+            string resultValue = CheckIfAllExamplesEqual(trainingSet);
             if (resultValue != null)
                 return new TreeNode(new Attribute(resultValue));
 
             if (attributes.Count == 0)
-                return new TreeNode(new Attribute(getMostCommonResult(trainingSet)));
+                return new TreeNode(new Attribute(GetMostCommonResult(trainingSet)));
 
-            Attribute attr = getAttrWithBiggestGainRatio(trainingSet, attributes);
+            Attribute attributeWithBiggestGainRatio = GetAttributeWithBiggestGainRatio(trainingSet, attributes);
 
-            TreeNode root = new TreeNode(attr);
+            TreeNode root = new TreeNode(attributeWithBiggestGainRatio);
 
-            for (int i = 0; i < attr.Values.Count; i++)
-                root.Children[i] = RecursiveBuildID3Tree(removeUsedValues(trainingSet, attr, attr.Values[i]), removeAttribute(attributes));
+            for (int i = 0; i < attributeWithBiggestGainRatio.Values.Count; i++)
+                root.Children[i] = RecursiveBuildID3Tree(RemoveUsedValues(trainingSet, attributeWithBiggestGainRatio, attributeWithBiggestGainRatio.Values[i]), RemoveAttribute(attributes, attributeWithBiggestGainRatio));
 
             return root;
         }

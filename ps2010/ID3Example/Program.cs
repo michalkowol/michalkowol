@@ -58,6 +58,8 @@ namespace ID3Example
             DataTable samples = getDataTable();
             ID3Tree id3 = new ID3Tree();
             TreeNode root = id3.BuildID3Tree(samples, "result", attributes);
+
+            Console.ReadKey();
         }
     }
 }

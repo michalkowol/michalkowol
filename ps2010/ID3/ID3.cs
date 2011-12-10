@@ -95,6 +95,23 @@ namespace ID3
             else
                 return Children[index];
         }
+
+        public override string ToString()
+        {
+            StringBuilder s = new StringBuilder(Attribute.Name + "\n");
+
+            if (Children != null)
+            {
+                s.AppendLine("[");
+                for (int i = 0; i < Children.Count; i++ )
+                {
+                    s.AppendLine(Attribute.Values[i] + " \n ( " + Children[i].ToString() + ")");
+                }
+                s.AppendLine("]");
+            }
+
+            return s.ToString();
+        }
     }
 
     public class ID3Tree
@@ -104,7 +121,7 @@ namespace ID3
 
         private string CheckIfAllExamplesEqual(DataTable trainingSet)
         {
-            foreach (DataColumn column in trainingSet.Columns)
+           /* foreach (DataColumn column in trainingSet.Columns)
             {
                 var columnElements = (from t in trainingSet.AsEnumerable()
                                       select t.Field<string>(column)).Distinct();
@@ -114,9 +131,16 @@ namespace ID3
             }
 
             var r = (from t in trainingSet.AsEnumerable()
-                     select t.Field<string>(Result.Name)).First();
+                     select t.Field<string>(Result.Name)).First();*/
 
-            return r;
+            var columnElements = (from t in trainingSet.AsEnumerable()
+                                  select t.Field<string>(Result.Name)).Distinct();
+
+            if (columnElements.Count() != 1)
+                return null;
+            else
+                return columnElements.First();
+
         }
 
         private string GetMostCommonResult(DataTable trainingSet)
@@ -154,23 +178,27 @@ namespace ID3
         private DataTable RemoveUsedValues(DataTable trainingSet, Attribute attribute, string value)
         {
             // TODO check it
+            DataTable newTable = trainingSet.Copy();
 
-            var rowsToRemove = (from row in trainingSet.AsEnumerable()
-                                where row.Field<string>(attribute.Name) == value
+
+            var rowsToRemove = (from row in newTable.AsEnumerable()
+                                where row.Field<string>(attribute.Name) != value
                                 select row).ToList();
+
 
             foreach (var rowToRemove in rowsToRemove)
                 rowToRemove.Delete();
 
-            trainingSet.AcceptChanges();
+            newTable.AcceptChanges();
 
-            return trainingSet;
+            return newTable;
         }
 
         private List<Attribute> RemoveAttribute(List<Attribute> attributes, Attribute attributeToRemove)
         {
-            attributes.Remove(attributeToRemove);
-            return attributes;
+            List<Attribute> copyAttr = new List<Attribute>(attributes);
+            copyAttr.Remove(attributeToRemove);
+            return copyAttr;
         }
 
 
@@ -206,6 +234,52 @@ namespace ID3
                 root.Children[i] = RecursiveBuildID3Tree(RemoveUsedValues(trainingSet, attributeWithBiggestGainRatio, attributeWithBiggestGainRatio.Values[i]), RemoveAttribute(attributes, attributeWithBiggestGainRatio));
 
             return root;
+        }
+
+        private bool checkIfAttributeExist(DataTable trainingSet, Attribute attr)
+        {
+            try
+            {
+                var columnElements = (from t in trainingSet.AsEnumerable()
+                                        select t.Field<string>(attr.Name)).Distinct();
+
+                if (columnElements.Count() != attr.Values.Count)
+                    return false;
+
+                foreach (string val in columnElements)
+                {
+                    if (!attr.Values.Contains(val))
+                        return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        public bool ValidateTrainingSet(DataTable trainingSet, List<Attribute> attributes, Attribute result)
+        {
+            if (attributes == null || result == null || trainingSet == null)
+                return false;
+
+            if (trainingSet.Columns.Count != attributes.Count + 1)
+                return false;
+
+            foreach (Attribute attr in attributes)
+            {
+
+                if (!checkIfAttributeExist(trainingSet, attr))
+                    return false;           
+               
+            }
+
+            if (!checkIfAttributeExist(trainingSet, result))
+                return false; 
+
+            return true;
         }
     }
 }

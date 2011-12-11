@@ -110,7 +110,7 @@ namespace ID3Example
                 Console.Write("ERROR\n");
 
             Console.WriteLine("\n\n\n");
-            foreach (string s in id3.CountResult(getTestTable(), root))
+            foreach (string s in id3.CountResult(getTestTable()))
                 Console.WriteLine(s);
 
             Console.ReadKey();

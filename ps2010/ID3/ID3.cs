@@ -297,14 +297,14 @@ namespace ID3
             }
         }
 
-        public List<string> CountResult(DataTable testSet, TreeNode root)
+        public List<string> CountResult(DataTable testSet)
         {
             ValidateTestSet(testSet);
             TreeNode localRoot;
             List<string> result = new List<string>();
             foreach (DataRow rowElement in testSet.Rows)
             {
-                localRoot = root;
+                localRoot = Root;
                 localRoot = NextRoot(rowElement, localRoot);
                 result.Add(localRoot.Attribute.Name);
             }

@@ -117,21 +117,11 @@ namespace ID3
     public class ID3Tree
     {
         private Attribute Result { get; set; }
+        private List<Attribute> Attrs;
         public TreeNode Root { get; private set; }
 
         private string CheckIfAllExamplesEqual(DataTable trainingSet)
         {
-           /* foreach (DataColumn column in trainingSet.Columns)
-            {
-                var columnElements = (from t in trainingSet.AsEnumerable()
-                                      select t.Field<string>(column)).Distinct();
-
-                if (columnElements.Count() > 1)
-                    return null;
-            }
-
-            var r = (from t in trainingSet.AsEnumerable()
-                     select t.Field<string>(Result.Name)).First();*/
 
             var columnElements = (from t in trainingSet.AsEnumerable()
                                   select t.Field<string>(Result.Name)).Distinct();
@@ -201,14 +191,13 @@ namespace ID3
             return copyAttr;
         }
 
-
-        public TreeNode BuildID3Tree(DataTable trainingSet, string result, List<Attribute> attributes)
-        {
-            return BuildID3Tree(trainingSet, new Attribute(result), attributes);
-        }
-
         public TreeNode BuildID3Tree(DataTable trainingSet, Attribute result, List<Attribute> attributes)
         {
+            bool isValid = ValidateTrainingSet(trainingSet,attributes,result);
+            if (!isValid)
+                return null;
+
+            Attrs = attributes;
             Result = result;
             Root = RecursiveBuildID3Tree(trainingSet, attributes);
             return Root;
@@ -236,26 +225,21 @@ namespace ID3
             return root;
         }
 
+
+        //validating dataset
         private bool checkIfAttributeExist(DataTable trainingSet, Attribute attr)
         {
-            try
-            {
+
                 var columnElements = (from t in trainingSet.AsEnumerable()
                                         select t.Field<string>(attr.Name)).Distinct();
 
-                if (columnElements.Count() != attr.Values.Count)
-                    return false;
 
+            
                 foreach (string val in columnElements)
                 {
                     if (!attr.Values.Contains(val))
-                        return false;
+                        throw new Exception("Wrong value in given data: " + val + "\n");
                 }
-            }
-            catch (Exception ex)
-            {
-                return false;
-            }
 
             return true;
         }
@@ -263,10 +247,10 @@ namespace ID3
         public bool ValidateTrainingSet(DataTable trainingSet, List<Attribute> attributes, Attribute result)
         {
             if (attributes == null || result == null || trainingSet == null)
-                return false;
+                throw new Exception("One of parameter is null\n");
 
             if (trainingSet.Columns.Count != attributes.Count + 1)
-                return false;
+                throw new Exception("Wrong number of columns in training data");
 
             foreach (Attribute attr in attributes)
             {
@@ -276,10 +260,55 @@ namespace ID3
                
             }
 
+
             if (!checkIfAttributeExist(trainingSet, result))
                 return false; 
 
             return true;
+        }
+
+        public bool ValidateTestSet(DataTable testSet)
+        {
+            if (Attrs == null || testSet == null)
+                throw new Exception("One of parameter is null\n");
+
+            if (testSet.Columns.Count != Attrs.Count)
+                throw new Exception("Wrong number of columns in training data");
+
+            foreach (Attribute attr in Attrs)
+            {
+
+                if (!checkIfAttributeExist(testSet, attr))
+                    return false;
+
+            }
+            return true;
+        }
+
+        private TreeNode NextRoot(DataRow row, TreeNode root)
+        {
+            if (root.Children == null || root.Children.Count == 0)
+                return root;
+            else
+            {
+                string val = row.Field<string>(root.Attribute.Name);
+                int childNum = root.Attribute.Values.IndexOf(val);
+                return NextRoot(row, root.Children[childNum]);
+            }
+        }
+
+        public List<string> CountResult(DataTable testSet, TreeNode root)
+        {
+            ValidateTestSet(testSet);
+            TreeNode localRoot;
+            List<string> result = new List<string>();
+            foreach (DataRow rowElement in testSet.Rows)
+            {
+                localRoot = root;
+                localRoot = NextRoot(rowElement, localRoot);
+                result.Add(localRoot.Attribute.Name);
+            }
+            return result;
         }
     }
 }

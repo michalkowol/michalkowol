@@ -56,28 +56,6 @@ namespace ID3Example
             column = result.Columns.Add("result");
             column.DataType = typeof(string);
 
-
- /*   old	| yes	      | swr	| down
-	--------+-------------+---------+--------
-	old	| no	      | swr 	| down
-	--------+-------------+---------+--------
-	old	| no	      | hwr	| down
-	--------+-------------+---------+--------
-	mid	| yes	      | swr	| down
-	--------+-------------+---------+--------
-	mid	| yes	      | hwr	| down
-	--------+-------------+---------+--------
-	mid	| no	      | hwr	| up
-	--------+-------------+---------+--------
-	mid	| no	      | swr	| up
-	--------+-------------+---------+--------
-	new	| yes	      | swr	| up
-	--------+-------------+---------+--------
-	new	| no	      | hwr	| up
-	--------+-------------+---------+--------
-	new	| no	      | swr	| up
-            */
-
             result.Rows.Add(new string[] { "old", "yes", "swr", "down" });
             result.Rows.Add(new string[] { "old", "no", "swr", "down" });
             result.Rows.Add(new string[] { "old", "no", "hwr", "down" });
@@ -92,19 +70,48 @@ namespace ID3Example
             return result;
         }
 
+        private static DataTable getTestTable()
+        {
+            DataTable result = new DataTable("samples");
+
+            DataColumn column = result.Columns.Add("age");
+            column.DataType = typeof(string);
+
+            column = result.Columns.Add("competition");
+            column.DataType = typeof(string);
+
+            column = result.Columns.Add("type");
+            column.DataType = typeof(string);
+
+
+            result.Rows.Add(new string[] { "old", "yes", "swr"});
+            result.Rows.Add(new string[] { "mid", "no", "hwr"});
+
+            return result;
+        }
+
         static void Main(string[] args)
         {
             ID3.Attribute age = new ID3.Attribute("age", new List<string>(new string[] { "new", "mid", "old" }));
             ID3.Attribute comp = new ID3.Attribute("competition", new List<string>(new string[] { "yes", "no" }));
             ID3.Attribute type = new ID3.Attribute("type", new List<string>(new string[] { "swr", "hwr" }));
 
+            ID3.Attribute result = new ID3.Attribute("result", new List<string>(new string[] { "down", "up" }));
+
             List<ID3.Attribute> attributes = new List<ID3.Attribute>(new ID3.Attribute[] { age, comp, type });
 
             DataTable samples = getDataTable();
             ID3Tree id3 = new ID3Tree();
-            TreeNode root = id3.BuildID3Tree(samples, "result", attributes);
+            TreeNode root = id3.BuildID3Tree(samples, result, attributes);
 
-            Console.Write(root.ToString());
+            if (root != null)
+                Console.Write(root.ToString());
+            else
+                Console.Write("ERROR\n");
+
+            Console.WriteLine("\n\n\n");
+            foreach (string s in id3.CountResult(getTestTable(), root))
+                Console.WriteLine(s);
 
             Console.ReadKey();
         }

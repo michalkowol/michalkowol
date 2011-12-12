@@ -11,9 +11,15 @@ namespace ID3
     /// </summary>
     internal static class MathHelpers
     {
-        public static double Info(DataTable trainingSet, Attribute result)
+        /// <summary>
+        /// Computes amount of information store in attribite.
+        /// </summary>
+        /// <param name="trainingSet">training set</param>
+        /// <param name="attibite">attribute we want to check</param>
+        /// <returns>amount of information store in attribite</returns>
+        public static double Info(DataTable trainingSet, Attribute attibite)
         {
-            var atributeElementsCount = TrainingSetHelpers.AtributeElementsCount(trainingSet, result);
+            var atributeElementsCount = TrainingSetHelpers.AtributeElementsCount(trainingSet, attibite);
 
             double trainingSetSize = trainingSet.Rows.Count;
             var pn = from elementCount in atributeElementsCount.Values
@@ -22,7 +28,14 @@ namespace ID3
             return Entropy(pn);
         }
 
-        public static double InfoAtribute(DataTable trainingSet, Attribute attribute, Attribute result)
+        /// <summary>
+        /// Computes amount of information store in attribite-result pair.
+        /// </summary>
+        /// <param name="trainingSet">training set</param>
+        /// <param name="attribute">attribute we want to check</param>
+        /// <param name="result">categorial attribute</param>
+        /// <returns>amount of information store in attribite-result pair</returns>
+        public static double InfoAttribute(DataTable trainingSet, Attribute attribute, Attribute result)
         {
             double infoAttribute = 0.0;
             double trainingSetSize = trainingSet.Rows.Count;
@@ -54,7 +67,7 @@ namespace ID3
         /// <returns>counted gain</returns>
         public static double Gain(DataTable trainingSet, Attribute attribute, Attribute result)
         {
-            return Info(trainingSet, result) - InfoAtribute(trainingSet, attribute, result);
+            return Info(trainingSet, result) - InfoAttribute(trainingSet, attribute, result);
         }
 
         /// <summary>
@@ -72,7 +85,7 @@ namespace ID3
         /// <summary>
         /// Counts the entropy.
         /// </summary>
-        /// <param name="pn">List of parameters</param>
+        /// <param name="pn">list of parameters</param>
         /// <returns>entropy</returns>
         public static double Entropy(IEnumerable<double> pn)
         {

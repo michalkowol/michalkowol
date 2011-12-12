@@ -6,6 +6,9 @@ using System.Data;
 
 namespace ID3
 {
+    /// <summary>
+    /// Class which helps with the mathematical part of ID3 algorithm
+    /// </summary>
     internal static class MathHelpers
     {
         public static double Info(DataTable trainingSet, Attribute result)
@@ -42,16 +45,35 @@ namespace ID3
             return infoAttribute;
         }
 
+        /// <summary>
+        /// Counts the gain value for attribute.
+        /// </summary>
+        /// <param name="trainingSet">training set</param>
+        /// <param name="attribute">attribute we want to check</param>
+        /// <param name="result">categorial attribute</param>
+        /// <returns>counted gain</returns>
         public static double Gain(DataTable trainingSet, Attribute attribute, Attribute result)
         {
             return Info(trainingSet, result) - InfoAtribute(trainingSet, attribute, result);
         }
 
+        /// <summary>
+        /// Countes the gain ratio for attribute.
+        /// </summary>
+        /// <param name="trainingSet">training set</param>
+        /// <param name="attribute">attribute we want to check</param>
+        /// <param name="result">categorial attribute</param>
+        /// <returns>counted gain ratio</returns>
         public static double GainRatio(DataTable trainingSet, Attribute attribute, Attribute result)
         {
             return Gain(trainingSet, attribute, result) / Info(trainingSet, attribute);
         }
 
+        /// <summary>
+        /// Counts the entropy.
+        /// </summary>
+        /// <param name="pn">List of parameters</param>
+        /// <returns>entropy</returns>
         public static double Entropy(IEnumerable<double> pn)
         {
             double result = 0.0;

@@ -7,11 +7,26 @@ using System.Data;
 
 namespace ID3
 {
+    /// <summary>
+    /// Class that represents attribiute.
+    /// </summary>
     public class Attribute
     {
+        /// <summary>
+        /// Name of the attribute
+        /// </summary>
         public string Name { get; private set; }
+
+        /// <summary>
+        /// List of all possible values for this attribute.
+        /// </summary>
         public List<string> Values { get; private set; }
 
+        /// <summary>
+        /// Default constructor which sets name and values of the attribute.
+        /// </summary>
+        /// <param name="name">name of the attribute</param>
+        /// <param name="values">possible values of the attributes</param>
         public Attribute(string name, List<string> values)
         {
             Name = name;
@@ -19,16 +34,30 @@ namespace ID3
             Values.Sort();
         }
 
+        /// <summary>
+        /// Constructor which sets the name of attribute and no values.
+        /// </summary>
+        /// <param name="name">name of the attribute</param>
         public Attribute(string name)
             : this(name, new List<string>())
         {
         }
 
+        /// <summary>
+        /// Returns index of given value.
+        /// </summary>
+        /// <param name="value">value to locate</param>
+        /// <returns>index of given value if the value is found, otherwise negativ number</returns>
         public int IndexOf(string value)
         {
             return Values.BinarySearch(value);
         }
 
+        /// <summary>
+        /// Determines if a value is correct for the attribute.
+        /// </summary>
+        /// <param name="value">value check</param>
+        /// <returns>true if attribute is correct, false otherwise</returns>
         public bool IsValidValue(string value)
         {
             return Values.Contains(value);
@@ -61,12 +90,28 @@ namespace ID3
         }
     }
 
-
+    /// <summary>
+    /// Class that represents tree node in ID3 algorithm. 
+    /// Tree node element has a node which is represented by Attribute and branches (Children) 
+    /// which corresponds to list of Attribute's values. To each child can be conncted another TreeNode or it can be null.
+    /// </summary>
     public class TreeNode
     {
+        /// <summary>
+        /// Tree node attribute.
+        /// </summary>
         public Attribute Attribute { get; private set; }
+
+        /// <summary>
+        /// List of children for this tree node. 
+        /// Each child in the list corresponds to a value in the list of Attribute values at the same index.
+        /// </summary>
         public List<TreeNode> Children { get; private set; } // dziecko odpowiada tej wartosci atrybutu co kolejnośc na liście attribute.values
 
+        /// <summary>
+        /// Default constructor. Creates TreeNode with given attribute.
+        /// </summary>
+        /// <param name="attribute">the node attribute</param>
         public TreeNode(Attribute attribute)
         {
             Attribute = attribute;
@@ -75,6 +120,11 @@ namespace ID3
                 Children.Add(null);
         }
 
+        /// <summary>
+        /// Adds new Child to the TreeNode to the selected value.
+        /// </summary>
+        /// <param name="treeNode">new TreeNode child to add</param>
+        /// <param name="ValueName">Name of the value to which connect the new child</param>
         public void AddTreeNode(TreeNode treeNode, string ValueName)
         {
             int index = Attribute.IndexOf(ValueName);
@@ -82,11 +132,19 @@ namespace ID3
                 Children[index] = treeNode;
         }
 
+        /// <summary>
+        /// Returns total number of children for this node.
+        /// </summary>
         public int NumberOfChildren
         {
             get { return Children.Count; }
         }
 
+        /// <summary>
+        /// Returns specified subtree.
+        /// </summary>
+        /// <param name="branchName">Name of the value which subtree we want to get  </param>
+        /// <returns>TreeNode element which is the root of specified branch</returns>
         public TreeNode GetChildByBranch(string branchName)
         {
             int index = Attribute.IndexOf(branchName);
@@ -114,12 +172,31 @@ namespace ID3
         }
     }
 
+    /// <summary>
+    /// Class which count ID3 decision tree and make decisions based on the previously built tree.
+    /// </summary>
     public class ID3Tree
     {
+        /// <summary>
+        /// Categorial attribute.
+        /// </summary>
         private Attribute Result { get; set; }
+
+        /// <summary>
+        /// List of non-categorial attributes.
+        /// </summary>
         private List<Attribute> Attrs;
+
+        /// <summary>
+        /// Root of the ID3Tree.
+        /// </summary>
         public TreeNode Root { get; private set; }
 
+        /// <summary>
+        /// Checks if all examples in training set has the same value of categorial attribute
+        /// </summary>
+        /// <param name="trainingSet">training set</param>
+        /// <returns>name of the value if ale examples have the same, otherwise null</returns>
         private string CheckIfAllExamplesEqual(DataTable trainingSet)
         {
 
@@ -133,6 +210,11 @@ namespace ID3
 
         }
 
+        /// <summary>
+        /// Returns the most common value of the categorial attribute for the given training set.
+        /// </summary>
+        /// <param name="trainingSet">training set</param>
+        /// <returns>most common categorial attribute's value</returns>
         private string GetMostCommonResult(DataTable trainingSet)
         {
             Dictionary<string, int> elementCount = TrainingSetHelpers.AtributeElementsCount(trainingSet, Result);
@@ -147,6 +229,12 @@ namespace ID3
             return maxPair.Key;
         }
 
+        /// <summary>
+        /// Returns non-categorial attriubute with the biggest gain ratio.
+        /// </summary>
+        /// <param name="trainingSet">training set</param>
+        /// <param name="attributes">list of non-categorial attributes</param>
+        /// <returns>attribute with the biggest gain ratio</returns>
         private Attribute GetAttributeWithBiggestGainRatio(DataTable trainingSet, List<Attribute> attributes)
         {
             Attribute AttributeWithBiggestGainRatio = attributes.First();
@@ -165,6 +253,14 @@ namespace ID3
             return AttributeWithBiggestGainRatio;
         }
 
+        /// <summary>
+        /// Removes rows from training set which are wrong for particular ID3 subtree. 
+        /// Leave only this rows which have paticular value of given attribute.
+        /// </summary>
+        /// <param name="trainingSet">original training set</param>
+        /// <param name="attribute">attribute we want to determine</param>
+        /// <param name="value">value of the given attribute we want to leave</param>
+        /// <returns>new training set only with selected, correct rows</returns>
         private DataTable RemoveUsedValues(DataTable trainingSet, Attribute attribute, string value)
         {
             // TODO check it
@@ -184,6 +280,12 @@ namespace ID3
             return newTable;
         }
 
+        /// <summary>
+        /// Removed non-categorial attribute which is already used in ID3 decision tree.
+        /// </summary>
+        /// <param name="attributes">list of non-categorial attributes</param>
+        /// <param name="attributeToRemove">attribute to remove</param>
+        /// <returns>new list without given attribute</returns>
         private List<Attribute> RemoveAttribute(List<Attribute> attributes, Attribute attributeToRemove)
         {
             List<Attribute> copyAttr = new List<Attribute>(attributes);
@@ -191,6 +293,13 @@ namespace ID3
             return copyAttr;
         }
 
+        /// <summary>
+        /// Builds the ID3 decision tree based on the given training set, set of non-categorical attributes and categorial attribute.
+        /// </summary>
+        /// <param name="trainingSet">training set to build the tree</param>
+        /// <param name="result">categorial attribute</param>
+        /// <param name="attributes">list of nont-categorial attributes</param>
+        /// <returns>Root node from the ID3 decision tree</returns>
         public TreeNode BuildID3Tree(DataTable trainingSet, Attribute result, List<Attribute> attributes)
         {
             bool isValid = ValidateTrainingSet(trainingSet,attributes,result);
@@ -203,6 +312,12 @@ namespace ID3
             return Root;
         }
 
+        /// <summary>
+        /// Build recursive ID3 decision tree.
+        /// </summary>
+        /// <param name="trainingSet">training set of data</param>
+        /// <param name="attributes">list of non-categorial attributes</param>
+        /// <returns>root node for the given data</returns>
         private TreeNode RecursiveBuildID3Tree(DataTable trainingSet, List<Attribute> attributes)
         {
             if (trainingSet.Rows.Count == 0)
@@ -226,7 +341,12 @@ namespace ID3
         }
 
 
-        //validating dataset
+        /// <summary>
+        /// Check if values for an attribute given in training set really exist.
+        /// </summary>
+        /// <param name="trainingSet">training set of values</param>
+        /// <param name="attr">attribute to check</param>
+        /// <returns>true if exist, otherwise for an exception</returns>
         private bool checkIfAttributeExist(DataTable trainingSet, Attribute attr)
         {
 
@@ -244,6 +364,13 @@ namespace ID3
             return true;
         }
 
+        /// <summary>
+        /// Check correctness of given training set, set of non-categorical attributes and categorial attribute.
+        /// </summary>
+        /// <param name="trainingSet">training set to check</param>
+        /// <param name="attributes">non-categorial attributes to check</param>
+        /// <param name="result">categorial attribute to chceck</param>
+        /// <returns>true if given parameters are correct, otherwise throws exception</returns>
         public bool ValidateTrainingSet(DataTable trainingSet, List<Attribute> attributes, Attribute result)
         {
             if (attributes == null || result == null || trainingSet == null)
@@ -267,6 +394,11 @@ namespace ID3
             return true;
         }
 
+        /// <summary>
+        /// Chceck correctness of the test set, comparing it with previously given categorial attribute and non-categorial attributes.
+        /// </summary>
+        /// <param name="testSet">test set to check</param>
+        /// <returns>true if given parameters are correct, otherwise throws exception</returns>
         public bool ValidateTestSet(DataTable testSet)
         {
             if (Attrs == null || testSet == null)
@@ -285,6 +417,12 @@ namespace ID3
             return true;
         }
 
+        /// <summary>
+        /// Returns the next root for the given set of test data. 
+        /// </summary>
+        /// <param name="row">set of data</param>
+        /// <param name="root">actual root</param>
+        /// <returns>next root</returns>
         private TreeNode NextRoot(DataRow row, TreeNode root)
         {
             if (root.Children == null || root.Children.Count == 0)
@@ -297,6 +435,12 @@ namespace ID3
             }
         }
 
+
+        /// <summary>
+        /// Count a decision based on the previously calculated ID3 decision tree.
+        /// </summary>
+        /// <param name="testSet">Problems which we want to resolve with already built decision tree</param>
+        /// <returns>list of answer for given problems</returns>
         public List<string> CountResult(DataTable testSet)
         {
             ValidateTestSet(testSet);

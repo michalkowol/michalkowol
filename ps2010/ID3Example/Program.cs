@@ -105,7 +105,7 @@ namespace ID3Example
             TreeNode root = id3.BuildID3Tree(samples, result, attributes);
 
             if (root != null)
-                Console.Write(root.ToString());
+                Console.Write(root.ToString2("  "));
             else
                 Console.Write("ERROR\n");
 

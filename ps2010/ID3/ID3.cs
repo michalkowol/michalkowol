@@ -154,18 +154,21 @@ namespace ID3
                 return Children[index];
         }
 
-        public override string ToString()
+        public string ToString2(string tab2)
         {
-            StringBuilder s = new StringBuilder(Attribute.Name + "\n");
+            StringBuilder s = new StringBuilder(Attribute.Name.ToUpper() + "\n");
 
             if (Children != null)
             {
-                s.AppendLine("[");
+               // s.AppendLine("[");
                 for (int i = 0; i < Children.Count; i++ )
                 {
-                    s.AppendLine(Attribute.Values[i] + " \n ( " + Children[i].ToString() + ")");
+                    string spaces = "";
+                    for (int j = 0; j < Attribute.Values[i].Length; j++ )
+                        spaces = spaces + " ";
+                    s.AppendLine(tab2+ Attribute.Values[i] + " -- " + Children[i].ToString2(tab2+spaces+ "     ") );
                 }
-                s.AppendLine("]");
+               // s.AppendLine("]");
             }
 
             return s.ToString();

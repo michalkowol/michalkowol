@@ -6,11 +6,26 @@ using System.Data;
 
 namespace ID3
 {
+    /// <summary>
+    /// Represent Atribute Result Pair.
+    /// </summary>
     internal class AtributeResultPair
     {
+        /// <summary>
+        /// Attribute.
+        /// </summary>
         public string Attribute { get; set; }
+        
+        /// <summary>
+        /// Result.
+        /// </summary>
         public string Result { get; set; }
 
+        /// <summary>
+        /// The constructor.
+        /// </summary>
+        /// <param name="attribute">attribute</param>
+        /// <param name="result">result</param>
         public AtributeResultPair(string attribute, string result)
         {
             Attribute = attribute;
@@ -39,8 +54,17 @@ namespace ID3
         }
     }
 
+    /// <summary>
+    /// Class with provides operation on training set
+    /// </summary>
     internal static class TrainingSetHelpers
     {
+        /// <summary>
+        /// Computes atribite value's count in training set.
+        /// </summary>
+        /// <param name="trainingSet">training set</param>
+        /// <param name="attribute">attribite</param>
+        /// <returns>{atribite value : atribite value's count in training set} dictonary</returns>
         public static Dictionary<string, int> AtributeElementsCount(DataTable trainingSet, Attribute attribute)
         {
             var dict = new Dictionary<string, int>();
@@ -58,6 +82,14 @@ namespace ID3
             return dict;
         }
 
+
+        /// <summary>
+        /// Computes atribute-result values pair's count in training set. 
+        /// </summary>
+        /// <param name="trainingSet">training set</param>
+        /// <param name="attribute">attribute</param>
+        /// <param name="result">seeked value</param>
+        /// <returns>{atribute-result values pair : atribute-result values pair's count in training set} dictionary</returns>
         public static Dictionary<AtributeResultPair, int> AtributeResultElementsCount(DataTable trainingSet, Attribute attribute, Attribute result)
         {
             var dict = new Dictionary<AtributeResultPair, int>();
